@@ -39,8 +39,6 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,6 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const caregiverData: CaregiverData = await req.json();
+    console.log("Received caregiver data:", caregiverData);
     
     // Generate temporary password
     const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
@@ -71,34 +70,34 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Insert caregiver data
+    console.log("User created successfully:", authData.user.id);
+
+    // Insert caregiver data into candidatos_cuidadores_rows table
     const { error: insertError } = await supabaseAdmin
-      .from("caregivers")
+      .from("candidatos_cuidadores_rows")
       .insert({
-        user_id: authData.user.id,
-        name: caregiverData.name,
+        nome: caregiverData.name,
         email: caregiverData.email,
-        whatsapp: caregiverData.whatsapp,
-        birth_date: caregiverData.birthDate,
-        has_children: caregiverData.hasChildren,
-        smoker: caregiverData.smoker,
+        telefone: caregiverData.whatsapp,
+        data_nascimento: caregiverData.birthDate,
+        possui_filhos: caregiverData.hasChildren,
+        fumante: caregiverData.smoker ? 'Sim' : 'Não',
         cep: caregiverData.cep,
-        address: caregiverData.address,
-        state: caregiverData.state,
-        city: caregiverData.city,
-        education: caregiverData.education,
-        courses: caregiverData.courses,
-        availability: caregiverData.availability,
-        sleep_at_client: caregiverData.sleepAtClient,
-        care_category: caregiverData.careCategory,
-        experience: caregiverData.experience,
-        reference1: caregiverData.reference1,
-        reference2: caregiverData.reference2,
-        reference3: caregiverData.reference3,
-        coren: caregiverData.coren,
-        crefito: caregiverData.crefito,
-        crm: caregiverData.crm,
-        status: 'pending'
+        endereco: caregiverData.address,
+        cidade: caregiverData.city,
+        escolaridade: caregiverData.education,
+        cursos: caregiverData.courses,
+        disponibilidade_horarios: caregiverData.availability,
+        disponivel_dormir_local: caregiverData.sleepAtClient ? 'Sim' : 'Não',
+        perfil_profissional: caregiverData.careCategory,
+        descricao_experiencia: caregiverData.experience,
+        referencias: [caregiverData.reference1, caregiverData.reference2, caregiverData.reference3]
+          .filter(Boolean)
+          .join('; '),
+        status_candidatura: 'Pendente',
+        data_cadastro: new Date().toISOString(),
+        ultima_atualizacao: new Date().toISOString(),
+        ativo: 'Sim'
       });
 
     if (insertError) {
@@ -109,40 +108,54 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send welcome email
-    await resend.emails.send({
-      from: "Cuidadores <onboarding@resend.dev>",
-      to: [caregiverData.email],
-      subject: "Bem-vindo! Seus dados de acesso à área do cuidador",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Bem-vindo à nossa plataforma!</h1>
-          <p>Olá <strong>${caregiverData.name}</strong>,</p>
-          <p>Seu cadastro foi realizado com sucesso! Abaixo estão seus dados de acesso à área exclusiva do cuidador:</p>
-          
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Dados de Acesso:</h3>
-            <p><strong>Email:</strong> ${caregiverData.email}</p>
-            <p><strong>Senha temporária:</strong> ${tempPassword}</p>
-          </div>
-          
-          <p>Para acessar sua área exclusiva, <a href="${Deno.env.get("SUPABASE_URL")?.replace('https://', 'https://')}/auth/signin" style="color: #007bff;">clique aqui</a> e faça login com suas credenciais.</p>
-          
-          <p><strong>Importante:</strong> Recomendamos que você altere sua senha após o primeiro acesso por questões de segurança.</p>
-          
-          <p>Em sua área você poderá:</p>
-          <ul>
-            <li>Visualizar e atualizar seus dados pessoais</li>
-            <li>Acompanhar o status de sua candidatura</li>
-            <li>Receber notificações importantes</li>
-          </ul>
-          
-          <p>Se você tiver alguma dúvida, entre em contato conosco.</p>
-          
-          <p>Atenciosamente,<br>Equipe de Cuidadores</p>
-        </div>
-      `,
-    });
+    console.log("Caregiver data inserted successfully");
+
+    // Try to send welcome email if Resend is configured
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (resendApiKey) {
+      try {
+        const resend = new Resend(resendApiKey);
+        await resend.emails.send({
+          from: "Cuidadores <onboarding@resend.dev>",
+          to: [caregiverData.email],
+          subject: "Bem-vindo! Seus dados de acesso à área do cuidador",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #333;">Bem-vindo à nossa plataforma!</h1>
+              <p>Olá <strong>${caregiverData.name}</strong>,</p>
+              <p>Seu cadastro foi realizado com sucesso! Abaixo estão seus dados de acesso à área exclusiva do cuidador:</p>
+              
+              <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Dados de Acesso:</h3>
+                <p><strong>Email:</strong> ${caregiverData.email}</p>
+                <p><strong>Senha temporária:</strong> ${tempPassword}</p>
+              </div>
+              
+              <p>Para acessar sua área exclusiva, acesse o site e faça login com suas credenciais.</p>
+              
+              <p><strong>Importante:</strong> Recomendamos que você altere sua senha após o primeiro acesso por questões de segurança.</p>
+              
+              <p>Em sua área você poderá:</p>
+              <ul>
+                <li>Visualizar e atualizar seus dados pessoais</li>
+                <li>Acompanhar o status de sua candidatura</li>
+                <li>Receber notificações importantes</li>
+              </ul>
+              
+              <p>Se você tiver alguma dúvida, entre em contato conosco.</p>
+              
+              <p>Atenciosamente,<br>Equipe de Cuidadores</p>
+            </div>
+          `,
+        });
+        console.log("Welcome email sent successfully");
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        // Don't fail the registration if email fails
+      }
+    } else {
+      console.log("RESEND_API_KEY not configured, skipping email");
+    }
 
     return new Response(
       JSON.stringify({ 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -31,7 +30,36 @@ import { Search, Plus, Edit, CheckCircle, Clock, FileText } from "lucide-react";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { Tables } from "@/integrations/supabase/types";
 
-type Caregiver = Tables<'caregivers'>;
+// Define the Caregiver interface here to match what useCaregivers returns
+interface Caregiver {
+  id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  whatsapp?: string;
+  birth_date?: string;
+  has_children: boolean;
+  smoker: boolean;
+  sleep_at_client: boolean;
+  cep?: string;
+  address?: string;
+  state?: string;
+  city?: string;
+  education?: string;
+  courses?: string;
+  care_category?: string;
+  experience?: string;
+  reference1?: string;
+  reference2?: string;
+  reference3?: string;
+  coren?: string;
+  crefito?: string;
+  crm?: string;
+  status: string;
+  availability?: string;
+  created_at: string;
+  updated_at?: string;
+}
 
 export default function AdminDashboard() {
   const { caregivers, loading, updateCaregiverStatus } = useCaregivers();

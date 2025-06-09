@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,7 +61,7 @@ interface CaregiverData {
   crm?: string;
   status: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 interface EditCaregiverFormProps {
@@ -93,23 +92,20 @@ export default function EditCaregiverForm({ caregiverData, onUpdate, onCancel }:
   const onSubmit = async (data: EditFormData) => {
     try {
       const { data: updatedData, error } = await supabase
-        .from('caregivers')
+        .from('candidatos_cuidadores_rows')
         .update({
-          name: data.name,
-          whatsapp: data.whatsapp,
-          address: data.address,
+          nome: data.name,
+          telefone: data.whatsapp,
+          endereco: data.address,
           cep: data.cep,
-          city: data.city,
-          state: data.state,
-          courses: data.courses,
-          availability: data.availability,
-          experience: data.experience,
-          reference1: data.reference1,
-          reference2: data.reference2,
-          reference3: data.reference3,
-          updated_at: new Date().toISOString()
+          cidade: data.city,
+          cursos: data.courses,
+          disponibilidade_horarios: data.availability,
+          descricao_experiencia: data.experience,
+          referencias: data.reference1,
+          ultima_atualizacao: new Date().toISOString()
         })
-        .eq('id', caregiverData.id)
+        .eq('id', parseInt(caregiverData.id))
         .select()
         .single();
 
@@ -119,7 +115,38 @@ export default function EditCaregiverForm({ caregiverData, onUpdate, onCancel }:
         return;
       }
 
-      onUpdate(updatedData);
+      // Map the updated data back to the expected format
+      const mappedData: CaregiverData = {
+        id: updatedData.id.toString(),
+        name: updatedData.nome,
+        email: updatedData.email,
+        whatsapp: updatedData.telefone,
+        birth_date: updatedData.data_nascimento,
+        has_children: updatedData.possui_filhos,
+        smoker: updatedData.fumante === 'Sim',
+        sleep_at_client: updatedData.disponivel_dormir_local === 'Sim',
+        cep: updatedData.cep,
+        address: updatedData.endereco,
+        state: 'SP',
+        city: updatedData.cidade,
+        education: updatedData.escolaridade,
+        courses: updatedData.cursos,
+        care_category: updatedData.perfil_profissional,
+        experience: updatedData.descricao_experiencia || updatedData.experiencia,
+        reference1: updatedData.referencias,
+        reference2: undefined,
+        reference3: undefined,
+        coren: undefined,
+        crefito: undefined,
+        crm: undefined,
+        status: updatedData.status_candidatura,
+        availability: updatedData.disponibilidade_horarios,
+        created_at: updatedData.data_cadastro || new Date().toISOString(),
+        updated_at: updatedData.ultima_atualizacao
+      };
+
+      toast.success('Dados atualizados com sucesso!');
+      onUpdate(mappedData);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Erro ao atualizar dados');

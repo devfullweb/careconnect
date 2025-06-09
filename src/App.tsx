@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import CadastrarCuidador from "./pages/CadastrarCuidador";
 import Auth from "./pages/Auth";
 import AreaCuidador from "./pages/AreaCuidador";
+import PainelTestemunhos from "./pages/PainelTestemunhos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/cadastrar-cuidador" element={<CadastrarCuidador />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/area-cuidador" element={<AreaCuidador />} />
+            <Route path="/painel/testemunhos" element={<PainelTestemunhos />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

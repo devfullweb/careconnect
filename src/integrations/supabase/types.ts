@@ -308,6 +308,7 @@ export type Database = {
           id: string
           last_name: string | null
           phone: string | null
+          type: string | null
           updated_at: string
           user_role: string | null
         }
@@ -319,6 +320,7 @@ export type Database = {
           id: string
           last_name?: string | null
           phone?: string | null
+          type?: string | null
           updated_at?: string
           user_role?: string | null
         }
@@ -330,6 +332,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
+          type?: string | null
           updated_at?: string
           user_role?: string | null
         }
@@ -338,8 +341,10 @@ export type Database = {
       testimonials: {
         Row: {
           avatar_url: string | null
+          caregiver_id: string | null
           content: string
           created_at: string
+          customer_id: string | null
           id: string
           name: string
           published: boolean | null
@@ -349,8 +354,10 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          caregiver_id?: string | null
           content: string
           created_at?: string
+          customer_id?: string | null
           id?: string
           name: string
           published?: boolean | null
@@ -360,8 +367,10 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          caregiver_id?: string | null
           content?: string
           created_at?: string
+          customer_id?: string | null
           id?: string
           name?: string
           published?: boolean | null
@@ -369,7 +378,15 @@ export type Database = {
           role?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_caregiver_id_fkey"
+            columns: ["caregiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
